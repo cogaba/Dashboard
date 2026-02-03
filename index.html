@@ -16,7 +16,7 @@
         }
         
         .container {
-            max-width: 1400px;
+            max-width: 95%;
             margin: 0 auto;
             background: white;
             border-radius: 16px;
@@ -516,6 +516,13 @@
         function formatNumber(value) {
             return value.toLocaleString('en-US');
         }
+
+
+        function getExtendedRange(data) {
+            const max = Math.max(...data);
+            return [0, max * 1.3]; // Extend by 30% to show labels
+        }
+        
         
         function switchTab(tabName) {
             document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
@@ -693,8 +700,9 @@
                 const yAxisTitle = key === 'GGHED' ? 'GGHE-D (constant 2023 US$)' : 
                                    key === 'CHE' ? 'GGHE-D % CHE' : 'GGHE-D % GDP';
                 
+                const xRangeCustom = getExtendedRange(list.map(c => c.avg));
                 Plotly.newPlot(`customComparison${key}Chart`, [trace], {
-                    xaxis: { title: yAxisTitle, gridcolor: '#e2e8f0' },
+                    xaxis: { title: yAxisTitle, gridcolor: '#e2e8f0', automargin: true, range: xRangeCustom },
                     yaxis: { gridcolor: '#e2e8f0', automargin: true },
                     plot_bgcolor: '#ffffff',
                     paper_bgcolor: '#ffffff',
@@ -1028,7 +1036,7 @@
             };
             
             Plotly.newPlot('topCountriesChart', [trace], {
-                xaxis: { title: 'GGHE-D (constant 2023 US$)', gridcolor: '#e2e8f0', automargin: true },
+                xaxis: { title: 'GGHE-D (constant 2023 US$)', gridcolor: '#e2e8f0', automargin: true, rangemode: 'tozero', autorange: true, fixedrange: false },
                 yaxis: { gridcolor: '#e2e8f0', automargin: true },
                 plot_bgcolor: '#ffffff',
                 paper_bgcolor: '#ffffff',
