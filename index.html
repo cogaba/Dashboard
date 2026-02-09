@@ -327,7 +327,7 @@
                     <div class="metric-value" id="countryCount">-</div>
                 </div>
                 <div class="metric-card green">
-                    <div class="metric-label">Avg GGHE-D</div>
+                    <div class="metric-label">Median GGHE-D</div>
                     <div class="metric-value" id="avgGGHED">-</div>
                 </div>
                 <div class="metric-card blue">
@@ -381,7 +381,7 @@
                     <div class="metric-value" id="copAvgGGHED">-</div>
                 </div>
                 <div class="metric-card orange">
-                    <div class="metric-label">Median COP GGHE-D % GDP</div>
+                    <div class="metric-label">Avg COP GGHE-D % GDP</div>
                     <div class="metric-value" id="copAvgGGHEDGDP">-</div>
                 </div>
                 <div class="metric-card teal">
@@ -796,8 +796,7 @@
                 avgGGHED = sortedGGHED[Math.floor(sortedGGHED.length / 2)]; // MEDIAN
             }
             if (validGDP.length > 0) {
-                const sortedGDP = validGDP.map(d => d[metrics.GDP]).sort((a, b) => a - b);
-                avgGDP = sortedGDP[Math.floor(sortedGDP.length / 2)]; // MEDIAN
+                avgGDP = validGDP.reduce((sum, d) => sum + d[metrics.GDP], 0) / validGDP.length; // MEAN
             }
             
             document.getElementById('copCountryCount').textContent = newCOPCountries.length;
@@ -914,13 +913,14 @@
             let avgGDP = 0;
             
             if (validGGHED.length > 0) {
-                avgGGHED = validGGHED.reduce((sum, d) => sum + d[metrics.GGHED], 0) / validGGHED.length;
+                const sortedGGHED = validGGHED.map(d => d[metrics.GGHED]).sort((a, b) => a - b);
+                avgGGHED = sortedGGHED[Math.floor(sortedGGHED.length / 2)]; // MEDIAN - controls for outliers
             }
             if (validCHE.length > 0) {
-                avgCHE = validCHE.reduce((sum, d) => sum + d[metrics.CHE], 0) / validCHE.length;
+                avgCHE = validCHE.reduce((sum, d) => sum + d[metrics.CHE], 0) / validCHE.length; // MEAN
             }
             if (validGDP.length > 0) {
-                avgGDP = validGDP.reduce((sum, d) => sum + d[metrics.GDP], 0) / validGDP.length;
+                avgGDP = validGDP.reduce((sum, d) => sum + d[metrics.GDP], 0) / validGDP.length; // MEAN
             }
             
             document.getElementById('countryCount').textContent = countries.size;
