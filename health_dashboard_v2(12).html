@@ -1,0 +1,1087 @@
+<!-- Version: 1771295772 - Tax Revenue Fixed with Scientific Notation -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Country Health Co-financing Dashboard</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 95%;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #2d3748 0%, #1a202c 100%);
+            color: white;
+            padding: 30px 40px;
+            border-bottom: 4px solid #667eea;
+        }
+        
+        .header h1 { font-size: 28px; margin-bottom: 8px; font-weight: 700; }
+        .header p { font-size: 15px; opacity: 0.9; color: #cbd5e0; }
+        
+        .tabs {
+            display: flex;
+            background: #f7fafc;
+            border-bottom: 2px solid #e2e8f0;
+        }
+        
+        .tab {
+            padding: 16px 32px;
+            cursor: pointer;
+            font-weight: 600;
+            color: #4a5568;
+            border-bottom: 3px solid transparent;
+            transition: all 0.2s;
+            flex: 1;
+            text-align: center;
+        }
+        
+        .tab:hover { background: #edf2f7; color: #2d3748; }
+        .tab.active { color: #667eea; border-bottom-color: #667eea; background: white; }
+        
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        
+        .controls {
+            padding: 30px 40px;
+            background: #f7fafc;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        
+        .control-row {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+        
+        .control-group {
+            flex: 1;
+            min-width: 250px;
+        }
+        
+        .control-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #2d3748;
+            font-size: 14px;
+        }
+        
+        .control-group select {
+            width: 100%;
+            padding: 12px 14px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 14px;
+            background: white;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .control-group select:hover { border-color: #667eea; }
+        .control-group select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        .multi-select-box {
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 10px;
+            background: white;
+            max-height: 350px;
+            overflow-y: auto;
+        }
+        
+        .country-checkbox {
+            display: flex;
+            align-items: center;
+            padding: 8px 10px;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: background 0.2s;
+        }
+        
+        .country-checkbox:hover { background: #f7fafc; }
+        
+        .country-checkbox input {
+            margin-right: 10px;
+            cursor: pointer;
+            width: 18px;
+            height: 18px;
+        }
+        
+        .country-checkbox label {
+            cursor: pointer;
+            font-size: 14px;
+            color: #2d3748;
+            margin: 0;
+            font-weight: 400;
+        }
+        
+        .selected-count {
+            font-size: 13px;
+            color: #667eea;
+            margin-top: 10px;
+            font-weight: 600;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #5568d3;
+            transform: translateY(-1px);
+        }
+        
+        .btn-secondary {
+            background: #e2e8f0;
+            color: #4a5568;
+        }
+        
+        .btn-secondary:hover { background: #cbd5e0; }
+        
+        .btn-success {
+            background: #38a169;
+            color: white;
+        }
+        
+        .btn-success:hover { background: #2f855a; }
+        
+        .search-box {
+            width: 100%;
+            padding: 10px 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 6px;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+        
+        .search-box:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .chart-container {
+            margin: 30px 40px;
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        
+        .chart-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #2d3748;
+            margin-bottom: 10px;
+        }
+        
+        .chart-subtitle {
+            font-size: 14px;
+            color: #718096;
+            margin-bottom: 20px;
+        }
+        
+        .placeholder {
+            text-align: center;
+            padding: 80px 20px;
+            color: #718096;
+        }
+        
+        .placeholder p {
+            font-size: 16px;
+            margin-bottom: 10px;
+        }
+        
+        .placeholder .icon {
+            font-size: 48px;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+        
+        .chart-type-toggle {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .toggle-btn {
+            padding: 8px 16px;
+            border: 2px solid #e2e8f0;
+            background: white;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            color: #4a5568;
+            transition: all 0.2s;
+        }
+        
+        .toggle-btn.active {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+        
+        .toggle-btn:hover:not(.active) {
+            background: #f7fafc;
+            border-color: #cbd5e0;
+        }
+    
+        .stats-box {
+            background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .stat-label {
+            font-size: 13px;
+            opacity: 0.9;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+        
+        .stat-value {
+            font-size: 32px;
+            font-weight: 700;
+        }
+        
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🌍 Country Health Co-financing Dashboard</h1>
+            <p>19 Countries | 7 Indicators | 2020-2023</p>
+        </div>
+        
+        <div class="tabs">
+            <div class="tab active" onclick="switchTab('single')">Country Overview</div>
+            <div class="tab" onclick="switchTab('compare')">Country Comparison</div>
+        </div>
+        
+        <!-- SINGLE COUNTRY TAB -->
+        <div id="singleTab" class="tab-content active">
+            <div class="controls">
+                <div class="control-row">
+                    <div class="control-group">
+                        <label for="singleCountrySelect">📍 Select Country</label>
+                        <select id="singleCountrySelect">
+                            <option value="">Choose a country...</option>
+                        </select>
+                    </div>
+                    
+                    <div class="control-group">
+                        <label>📊 Select Indicators (check one or more)</label>
+                        <div class="multi-select-box" id="overviewIndicatorCheckboxes"></div>
+                        <div class="selected-count" id="overviewIndicatorCount">0 indicators selected</div>
+                    </div>
+                </div>
+                
+                <div class="button-group">
+                    <button class="btn btn-primary" onclick="updateSingleCountryView()">📈 Show Chart</button>
+                    <button class="btn btn-success" onclick="downloadSingleCountryData()">📥 Download Data (Excel)</button>
+                </div>
+            </div>
+            
+            <div id="singleChartContainer">
+                <div class="placeholder">
+                    <div class="icon">📊</div>
+                    <p><strong>Select a country and indicator</strong></p>
+                    <p style="font-size: 14px;">Choose from the dropdowns above and click "Show Chart" to view the data</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- COMPARISON TAB -->
+        <div id="compareTab" class="tab-content">
+            <div class="controls">
+                <div class="control-row">
+                    <div class="control-group">
+                        <label>📊 Select Indicators (check one or more)</label>
+                        <div class="multi-select-box" id="compareIndicatorCheckboxes"></div>
+                        <div class="selected-count" id="compareIndicatorCount">0 indicators selected</div>
+                    </div>
+                    
+                    <div class="control-group" style="flex: 1.5;">
+                        <label>🌍 Select Countries to Compare</label>
+                        <input type="text" id="searchBox" class="search-box" placeholder="Search countries...">
+                        <div class="multi-select-box" id="countryMultiSelect"></div>
+                        <div class="selected-count" id="selectedCount">0 countries selected</div>
+                    </div>
+                </div>
+                
+                <div class="button-group">
+                    <button class="btn btn-primary" onclick="updateComparisonView()">📈 Compare Countries</button>
+                    <button class="btn btn-secondary" onclick="clearSelection()">Clear All</button>
+                    <button class="btn btn-secondary" onclick="selectAll()">Select All</button>
+                    <button class="btn btn-success" onclick="downloadComparisonData()">📥 Download Data (Excel)</button>
+                </div>
+            </div>
+            
+            <div id="compareChartContainer">
+                <div class="placeholder">
+                    <div class="icon">📊</div>
+                    <p><strong>Select an indicator and countries to compare</strong></p>
+                    <p style="font-size: 14px;">Choose from the dropdowns above and click "Compare Countries"</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        window.addEventListener('load', function() {
+            if (typeof Plotly === 'undefined') {
+                alert('Dashboard failed to load. Please refresh the page.');
+                return;
+            }
+            initializeDashboard();
+        });
+        
+        const globalData = [{"Country": "Botswana", "Year": 2020, "Gov_Debt_pct_GDP": 19.6161332466694, "CHE_pct_GDP": 6.121339799999999, "GGHED_pct_GGE": 11.661524770000002, "GGHED_pct_GDP": 4.489948270000001, "GGHED_million_USD": 670.35048441, "DOM_pct_CHE": 94.27572632000002, "Tax_Revenue_pct_GDP": 2.2274705033068345e-05}, {"Country": "Botswana", "Year": 2021, "Gov_Debt_pct_GDP": null, "CHE_pct_GDP": 6.30315065, "GGHED_pct_GGE": 14.610138889999998, "GGHED_pct_GDP": 4.82830048, "GGHED_million_USD": 905.3146566299998, "DOM_pct_CHE": 94.63404082999999, "Tax_Revenue_pct_GDP": 2.2230420222016742e-05}, {"Country": "Botswana", "Year": 2022, "Gov_Debt_pct_GDP": null, "CHE_pct_GDP": 5.73650789, "GGHED_pct_GGE": 14.610138889999998, "GGHED_pct_GDP": 4.30745316, "GGHED_million_USD": 875.3225751399999, "DOM_pct_CHE": 93.65893555, "Tax_Revenue_pct_GDP": 1.9649529503827165e-05}, {"Country": "Botswana", "Year": 2023, "Gov_Debt_pct_GDP": null, "CHE_pct_GDP": 6.255746839999999, "GGHED_pct_GGE": 14.610138889999998, "GGHED_pct_GDP": 4.72067308, "GGHED_million_USD": 916.3423499100002, "DOM_pct_CHE": 93.46566010000001, "Tax_Revenue_pct_GDP": 1.8713327834219744e-05}, {"Country": "Burundi", "Year": 2020, "Gov_Debt_pct_GDP": null, "CHE_pct_GDP": 10.707761759999999, "GGHED_pct_GGE": 7.3328781099999985, "GGHED_pct_GDP": 2.1569612, "GGHED_million_USD": 66.63813337999997, "DOM_pct_CHE": 43.412761689999996, "Tax_Revenue_pct_GDP": 1.2959932335418448e-08}, {"Country": "Burundi", "Year": 2021, "Gov_Debt_pct_GDP": null, "CHE_pct_GDP": 8.94190311, "GGHED_pct_GGE": 7.3328781099999985, "GGHED_pct_GDP": 2.2244782399999994, "GGHED_million_USD": 74.5531012, "DOM_pct_CHE": 52.51162338, "Tax_Revenue_pct_GDP": 1.2633337462750374e-08}, {"Country": "Burundi", "Year": 2022, "Gov_Debt_pct_GDP": null, "CHE_pct_GDP": 8.6687746, "GGHED_pct_GGE": 4.72897339, "GGHED_pct_GDP": 1.58512878, "GGHED_million_USD": 62.16614441, "DOM_pct_CHE": 46.92467499000001, "Tax_Revenue_pct_GDP": null}, {"Country": "Burundi", "Year": 2023, "Gov_Debt_pct_GDP": null, "CHE_pct_GDP": 9.09471226, "GGHED_pct_GGE": 4.72897339, "GGHED_pct_GDP": 1.3403656500000003, "GGHED_million_USD": 56.77391525, "DOM_pct_CHE": 42.57962418, "Tax_Revenue_pct_GDP": null}, {"Country": "Cameroon", "Year": 2020, "Gov_Debt_pct_GDP": null, "CHE_pct_GDP": 4.25051928, "GGHED_pct_GGE": 3.65950561, "GGHED_pct_GDP": 0.60675448, "GGHED_million_USD": 247.58283361999997, "DOM_pct_CHE": 89.28744507000002, "Tax_Revenue_pct_GDP": 1.0870582806993218e-08}, {"Country": "Cameroon", "Year": 2021, "Gov_Debt_pct_GDP": null, "CHE_pct_GDP": 4.341097830000001, "GGHED_pct_GGE": 2.86292386, "GGHED_pct_GDP": 0.48882192, "GGHED_million_USD": 220.02818385, "DOM_pct_CHE": 84.98178863999999, "Tax_Revenue_pct_GDP": 1.1341515726848421e-08}, {"Country": "Cameroon", "Year": 2022, "Gov_Debt_pct_GDP": null, "CHE_pct_GDP": 4.494391439999999, "GGHED_pct_GGE": 3.91280055, "GGHED_pct_GDP": 0.6683316199999998, "GGHED_million_USD": 296.38662138999996, "DOM_pct_CHE": 85.58100890999998, "Tax_Revenue_pct_GDP": null}, {"Country": "Cameroon", "Year": 2023, "Gov_Debt_pct_GDP": null, "CHE_pct_GDP": 4.5545516, "GGHED_pct_GGE": 3.91280055, "GGHED_pct_GDP": 0.6692339200000001, "GGHED_million_USD": 329.76844455, "DOM_pct_CHE": 85.29437256000001, "Tax_Revenue_pct_GDP": null}, {"Country": "Democratic Republic of the Congo", "Year": 2020, "Gov_Debt_pct_GDP": null, "CHE_pct_GDP": 3.97694445, "GGHED_pct_GGE": 5.08724737, "GGHED_pct_GDP": 0.63877279, "GGHED_million_USD": 316.97963517, "DOM_pct_CHE": 62.519592290000006, "Tax_Revenue_pct_GDP": 6.708737893107413e-09}, {"Country": "Democratic Republic of the Congo", "Year": 2021, "Gov_Debt_pct_GDP": null, "CHE_pct_GDP": 3.867279770000001, "GGHED_pct_GGE": 4.512646200000001, "GGHED_pct_GDP": 0.64831114, "GGHED_million_USD": 358.8294814000001, "DOM_pct_CHE": 62.49280166999999, "Tax_Revenue_pct_GDP": 7.867397215446762e-09}, {"Country": "Democratic Republic of the Congo", "Year": 2022, "Gov_Debt_pct_GDP": 14.9405246182608, "CHE_pct_GDP": 3.9417696000000007, "GGHED_pct_GGE": 3.9843409100000002, "GGHED_pct_GDP": 0.72449565, "GGHED_million_USD": 458.8445308799999, "DOM_pct_CHE": 61.37802887, "Tax_Revenue_pct_GDP": 1.0662282461764903e-08}, {"Country": "Democratic Republic of the Congo", "Year": 2023, "Gov_Debt_pct_GDP": null, "CHE_pct_GDP": 3.6849508300000005, "GGHED_pct_GGE": 4.000719070000001, "GGHED_pct_GDP": 0.6899056399999999, "GGHED_million_USD": 464.08913183000004, "DOM_pct_CHE": 63.00879669, "Tax_Revenue_pct_GDP": null}, {"Country": "Eswatini", "Year": 2020, "Gov_Debt_pct_GDP": 38.3588929573653, "CHE_pct_GDP": 7.0983777, "GGHED_pct_GGE": 10.393843649999999, "GGHED_pct_GDP": 3.5369305599999996, "GGHED_million_USD": 140.84796364000005, "DOM_pct_CHE": 79.44883728, "Tax_Revenue_pct_GDP": 2.708994286012338e-05}, {"Country": "Eswatini", "Year": 2021, "Gov_Debt_pct_GDP": 35.7240338809728, "CHE_pct_GDP": 7.40552139, "GGHED_pct_GGE": 12.30096912, "GGHED_pct_GDP": 3.6500492099999997, "GGHED_million_USD": 177.05784867999998, "DOM_pct_CHE": 77.5500946, "Tax_Revenue_pct_GDP": 2.434770367299337e-05}, {"Country": "Eswatini", "Year": 2022, "Gov_Debt_pct_GDP": null, "CHE_pct_GDP": 7.2449131, "GGHED_pct_GGE": 10.635377880000002, "GGHED_pct_GDP": 3.243932719999999, "GGHED_million_USD": 155.41344852000003, "DOM_pct_CHE": 72.06491089, "Tax_Revenue_pct_GDP": null}, {"Country": "Eswatini", "Year": 2023, "Gov_Debt_pct_GDP": null, "CHE_pct_GDP": 7.497639659999999, "GGHED_pct_GGE": 10.635377880000002, "GGHED_pct_GDP": 3.2037799399999995, "GGHED_million_USD": 155.66124569000002, "DOM_pct_CHE": 71.56013489, "Tax_Revenue_pct_GDP": null}, {"Country": "Ethiopia", "Year": 2020, "Gov_Debt_pct_GDP": null, "CHE_pct_GDP": 3.4809627499999998, "GGHED_pct_GGE": 6.79223251, "GGHED_pct_GDP": 0.98278511, "GGHED_million_USD": 949.4787056499999, "DOM_pct_CHE": 65.551651, "Tax_Revenue_pct_GDP": 6.196300686336413e-06}, {"Country": "Ethiopia", "Year": 2021, "Gov_Debt_pct_GDP": null, "CHE_pct_GDP": 3.20779967, "GGHED_pct_GGE": 7.096745009999998, "GGHED_pct_GDP": 0.9792620500000002, "GGHED_million_USD": 972.0175487500001, "DOM_pct_CHE": 71.70927429000001, "Tax_Revenue_pct_GDP": 5.32472596181248e-06}, {"Country": "Ethiopia", "Year": 2022, "Gov_Debt_pct_GDP": null, "CHE_pct_GDP": 2.85298109, "GGHED_pct_GGE": 5.6767020200000005, "GGHED_pct_GDP": 0.7208011199999999, "GGHED_million_USD": 857.4782958400001, "DOM_pct_CHE": 74.68128967, "Tax_Revenue_pct_GDP": 4.496885089751562e-06}, {"Country": "Ethiopia", "Year": 2023, "Gov_Debt_pct_GDP": null, "CHE_pct_GDP": 2.8031034499999996, "GGHED_pct_GGE": 5.6767020200000005, "GGHED_pct_GDP": 0.614245, "GGHED_million_USD": 981.3256474500001, "DOM_pct_CHE": 73.12490845000002, "Tax_Revenue_pct_GDP": 3.9310582273149604e-06}, {"Country": "Ghana", "Year": 2020, "Gov_Debt_pct_GDP": null, "CHE_pct_GDP": 4.4331708, "GGHED_pct_GGE": 8.023230549999997, "GGHED_pct_GDP": 2.5281891800000005, "GGHED_million_USD": 1770.82320693, "DOM_pct_CHE": 82.04533386, "Tax_Revenue_pct_GDP": 1.1340431962022978e-05}, {"Country": "Ghana", "Year": 2021, "Gov_Debt_pct_GDP": null, "CHE_pct_GDP": 3.8603086500000003, "GGHED_pct_GGE": 7.71420717, "GGHED_pct_GDP": 2.09936643, "GGHED_million_USD": 1669.50924609, "DOM_pct_CHE": 85.20298767000001, "Tax_Revenue_pct_GDP": 1.2244686725348878e-05}, {"Country": "Ghana", "Year": 2022, "Gov_Debt_pct_GDP": null, "CHE_pct_GDP": 3.67459154, "GGHED_pct_GGE": 7.409587859999999, "GGHED_pct_GDP": 2.03708911, "GGHED_million_USD": 1512.8102618300002, "DOM_pct_CHE": 84.18943024000001, "Tax_Revenue_pct_GDP": 1.2297535806810447e-05}, {"Country": "Ghana", "Year": 2023, "Gov_Debt_pct_GDP": null, "CHE_pct_GDP": 2.946869370000001, "GGHED_pct_GGE": 10.051485059999997, "GGHED_pct_GDP": 1.8631776600000003, "GGHED_million_USD": 1500.8810767, "DOM_pct_CHE": 91.46691132000002, "Tax_Revenue_pct_GDP": null}, {"Country": "Kenya", "Year": 2020, "Gov_Debt_pct_GDP": null, "CHE_pct_GDP": 4.49248886, "GGHED_pct_GGE": 8.91046047, "GGHED_pct_GDP": 2.2100935, "GGHED_million_USD": 2224.4213617699997, "DOM_pct_CHE": 82.83821868999999, "Tax_Revenue_pct_GDP": 1.4299822632983265e-08}, {"Country": "Kenya", "Year": 2021, "Gov_Debt_pct_GDP": null, "CHE_pct_GDP": 4.569927220000001, "GGHED_pct_GGE": 9.28240871, "GGHED_pct_GDP": 2.22920752, "GGHED_million_USD": 2445.52227276, "DOM_pct_CHE": 81.45159148999998, "Tax_Revenue_pct_GDP": 1.3554644327384658e-08}, {"Country": "Kenya", "Year": 2022, "Gov_Debt_pct_GDP": null, "CHE_pct_GDP": 4.322418689999999, "GGHED_pct_GGE": 8.65115547, "GGHED_pct_GDP": 2.0036442300000004, "GGHED_million_USD": 2293.1508463900004, "DOM_pct_CHE": 80.98274231, "Tax_Revenue_pct_GDP": 1.4599349634334255e-08}, {"Country": "Kenya", "Year": 2023, "Gov_Debt_pct_GDP": null, "CHE_pct_GDP": 4.351728919999999, "GGHED_pct_GGE": 8.65115547, "GGHED_pct_GDP": 1.95431077, "GGHED_million_USD": 2111.4096805, "DOM_pct_CHE": 79.86293792999999, "Tax_Revenue_pct_GDP": 1.4063111381763927e-08}, {"Country": "Lesotho", "Year": 2020, "Gov_Debt_pct_GDP": 2.99271686140967, "CHE_pct_GDP": 10.40836906, "GGHED_pct_GGE": 8.949593539999999, "GGHED_pct_GDP": 4.871972560000001, "GGHED_million_USD": 101.34905232000001, "DOM_pct_CHE": 62.82900238, "Tax_Revenue_pct_GDP": 3.599435664008624e-05}, {"Country": "Lesotho", "Year": 2021, "Gov_Debt_pct_GDP": null, "CHE_pct_GDP": 10.66165733, "GGHED_pct_GGE": 8.15242481, "GGHED_pct_GDP": 4.3842916500000015, "GGHED_million_USD": 107.70658502, "DOM_pct_CHE": 55.79022597999999, "Tax_Revenue_pct_GDP": 3.1870231410468646e-05}, {"Country": "Lesotho", "Year": 2022, "Gov_Debt_pct_GDP": null, "CHE_pct_GDP": 12.895691870000002, "GGHED_pct_GGE": 12.883148190000004, "GGHED_pct_GDP": 6.550549979999998, "GGHED_million_USD": 154.82601111, "DOM_pct_CHE": 63.54873276000001, "Tax_Revenue_pct_GDP": 3.0442548596798652e-05}, {"Country": "Lesotho", "Year": 2023, "Gov_Debt_pct_GDP": null, "CHE_pct_GDP": 12.61182117, "GGHED_pct_GGE": 11.83322239, "GGHED_pct_GDP": 5.84427834, "GGHED_million_USD": 131.36306351000002, "DOM_pct_CHE": 59.536769870000015, "Tax_Revenue_pct_GDP": 4.022476293227369e-05}, {"Country": "Mozambique", "Year": 2020, "Gov_Debt_pct_GDP": 101.390931723437, "CHE_pct_GDP": 7.55190039, "GGHED_pct_GGE": 7.0641245800000005, "GGHED_pct_GDP": 2.3917768, "GGHED_million_USD": 340.47931894000004, "DOM_pct_CHE": 48.12591933999999, "Tax_Revenue_pct_GDP": 2.1526702936658124e-05}, {"Country": "Mozambique", "Year": 2021, "Gov_Debt_pct_GDP": 84.1569664621914, "CHE_pct_GDP": 8.64841366, "GGHED_pct_GGE": 7.11263514, "GGHED_pct_GDP": 2.28472924, "GGHED_million_USD": 369.39636813999994, "DOM_pct_CHE": 41.232654569999994, "Tax_Revenue_pct_GDP": 2.2747755709115614e-05}, {"Country": "Mozambique", "Year": 2022, "Gov_Debt_pct_GDP": 76.6350609536734, "CHE_pct_GDP": 8.24868107, "GGHED_pct_GGE": 6.95726824, "GGHED_pct_GDP": 2.2888209799999997, "GGHED_million_USD": 432.2101673700001, "DOM_pct_CHE": 43.77978134, "Tax_Revenue_pct_GDP": 2.266159088188012e-05}, {"Country": "Mozambique", "Year": 2023, "Gov_Debt_pct_GDP": 72.6610029459905, "CHE_pct_GDP": 8.501265530000001, "GGHED_pct_GGE": 6.76256466, "GGHED_pct_GDP": 2.249192, "GGHED_million_USD": 471.3007318, "DOM_pct_CHE": 42.28929138, "Tax_Revenue_pct_GDP": 2.2359624129310294e-05}, {"Country": "Namibia", "Year": 2020, "Gov_Debt_pct_GDP": null, "CHE_pct_GDP": 9.560602190000001, "GGHED_pct_GGE": 15.705351830000003, "GGHED_pct_GDP": 6.514129639999998, "GGHED_million_USD": 689.43881111, "DOM_pct_CHE": 97.05693817000001, "Tax_Revenue_pct_GDP": 3.120591107142522e-05}, {"Country": "Namibia", "Year": 2021, "Gov_Debt_pct_GDP": null, "CHE_pct_GDP": 10.19644737, "GGHED_pct_GGE": 16.60372353, "GGHED_pct_GDP": 6.51885366, "GGHED_million_USD": 808.4985291300002, "DOM_pct_CHE": 92.57073212000002, "Tax_Revenue_pct_GDP": 2.8063986589726723e-05}, {"Country": "Namibia", "Year": 2022, "Gov_Debt_pct_GDP": null, "CHE_pct_GDP": 9.621988300000002, "GGHED_pct_GGE": 15.882202150000001, "GGHED_pct_GDP": 5.806184770000001, "GGHED_million_USD": 729.80498847, "DOM_pct_CHE": 90.35182953, "Tax_Revenue_pct_GDP": 2.7166839852055696e-05}, {"Country": "Namibia", "Year": 2023, "Gov_Debt_pct_GDP": null, "CHE_pct_GDP": 9.482516290000001, "GGHED_pct_GGE": 14.99252129, "GGHED_pct_GDP": 5.54813719, "GGHED_million_USD": 688.4285339300002, "DOM_pct_CHE": 88.61550140000001, "Tax_Revenue_pct_GDP": 3.2962902094769104e-05}, {"Country": "Nigeria", "Year": 2020, "Gov_Debt_pct_GDP": null, "CHE_pct_GDP": 3.38063431, "GGHED_pct_GGE": 4.18390417, "GGHED_pct_GDP": 0.50597858, "GGHED_million_USD": 2175.1957760500004, "DOM_pct_CHE": 90.41661835, "Tax_Revenue_pct_GDP": null}, {"Country": "Nigeria", "Year": 2021, "Gov_Debt_pct_GDP": null, "CHE_pct_GDP": 4.0762572299999995, "GGHED_pct_GGE": 4.3079586, "GGHED_pct_GDP": 0.54102808, "GGHED_million_USD": 2374.7053413900003, "DOM_pct_CHE": 92.13593291999999, "Tax_Revenue_pct_GDP": null}, {"Country": "Nigeria", "Year": 2022, "Gov_Debt_pct_GDP": null, "CHE_pct_GDP": 4.21020174, "GGHED_pct_GGE": 4.3079586, "GGHED_pct_GDP": 0.61952227, "GGHED_million_USD": 2943.0933600700005, "DOM_pct_CHE": 93.04937743999999, "Tax_Revenue_pct_GDP": null}, {"Country": "Nigeria", "Year": 2023, "Gov_Debt_pct_GDP": null, "CHE_pct_GDP": 4.19086456, "GGHED_pct_GGE": 4.3079586, "GGHED_pct_GDP": 0.6009331899999999, "GGHED_million_USD": 2183.44085636, "DOM_pct_CHE": 88.72156525000003, "Tax_Revenue_pct_GDP": null}, {"Country": "Rwanda", "Year": 2020, "Gov_Debt_pct_GDP": null, "CHE_pct_GDP": 5.79862261, "GGHED_pct_GGE": 6.391299720000001, "GGHED_pct_GDP": 2.13853812, "GGHED_million_USD": 217.57688563000002, "DOM_pct_CHE": 53.73461914000001, "Tax_Revenue_pct_GDP": 1.5074468798370736e-08}, {"Country": "Rwanda", "Year": 2021, "Gov_Debt_pct_GDP": null, "CHE_pct_GDP": 6.23147202, "GGHED_pct_GGE": 8.35194492, "GGHED_pct_GDP": 2.6361188899999997, "GGHED_million_USD": 291.78966387, "DOM_pct_CHE": 60.0, "Tax_Revenue_pct_GDP": 1.446370978442372e-08}, {"Country": "Rwanda", "Year": 2022, "Gov_Debt_pct_GDP": null, "CHE_pct_GDP": 5.92842579, "GGHED_pct_GGE": 8.202532770000001, "GGHED_pct_GDP": 2.432395219999999, "GGHED_million_USD": 323.9075528, "DOM_pct_CHE": 57.0, "Tax_Revenue_pct_GDP": 1.3680051204789176e-08}, {"Country": "Rwanda", "Year": 2023, "Gov_Debt_pct_GDP": null, "CHE_pct_GDP": 5.127089979999999, "GGHED_pct_GGE": 8.923098559999998, "GGHED_pct_GDP": 2.4112310399999997, "GGHED_million_USD": 345.56652118000005, "DOM_pct_CHE": 63.0, "Tax_Revenue_pct_GDP": 1.350806954795939e-08}, {"Country": "South Africa", "Year": 2020, "Gov_Debt_pct_GDP": 75.7255090818801, "CHE_pct_GDP": 9.021740910000002, "GGHED_pct_GGE": 16.88567543, "GGHED_pct_GDP": 5.84510279, "GGHED_million_USD": 19754.964392389997, "DOM_pct_CHE": 98.26433562999998, "Tax_Revenue_pct_GDP": 2.326494403383097e-08}, {"Country": "South Africa", "Year": 2021, "Gov_Debt_pct_GDP": 74.0826080100226, "CHE_pct_GDP": 8.6645031, "GGHED_pct_GGE": 16.88567543, "GGHED_pct_GDP": 5.49496222, "GGHED_million_USD": 23127.571668629993, "DOM_pct_CHE": 98.64809417999999, "Tax_Revenue_pct_GDP": 2.595015420270897e-08}, {"Country": "South Africa", "Year": 2022, "Gov_Debt_pct_GDP": 76.2054429487374, "CHE_pct_GDP": 8.745122910000001, "GGHED_pct_GGE": 16.88567543, "GGHED_pct_GDP": 5.38311863, "GGHED_million_USD": 21904.982422559995, "DOM_pct_CHE": 98.09921265, "Tax_Revenue_pct_GDP": 2.6018376592418998e-08}, {"Country": "South Africa", "Year": 2023, "Gov_Debt_pct_GDP": 79.446907709916, "CHE_pct_GDP": 8.909667970000001, "GGHED_pct_GGE": 16.88567543, "GGHED_pct_GDP": 5.489568710000001, "GGHED_million_USD": 20898.74372716, "DOM_pct_CHE": 97.94301605000001, "Tax_Revenue_pct_GDP": 2.5400457376178478e-08}, {"Country": "Uganda", "Year": 2020, "Gov_Debt_pct_GDP": 44.1859143085922, "CHE_pct_GDP": 5.23865509, "GGHED_pct_GGE": 5.554035659999999, "GGHED_pct_GDP": 1.19107807, "GGHED_million_USD": 452.16615083000005, "DOM_pct_CHE": 53.999767299999995, "Tax_Revenue_pct_GDP": 1.1391163306811038e-08}, {"Country": "Uganda", "Year": 2021, "Gov_Debt_pct_GDP": 51.3026623484674, "CHE_pct_GDP": 5.47374916, "GGHED_pct_GGE": 5.353579999999999, "GGHED_pct_GDP": 1.1472704399999998, "GGHED_million_USD": 491.09312575, "DOM_pct_CHE": 49.9785347, "Tax_Revenue_pct_GDP": 1.2458866676595384e-08}, {"Country": "Uganda", "Year": 2022, "Gov_Debt_pct_GDP": 53.890283062847, "CHE_pct_GDP": 4.45071125, "GGHED_pct_GGE": 4.860398770000001, "GGHED_pct_GDP": 0.98358905, "GGHED_million_USD": 465.00461914999994, "DOM_pct_CHE": 57.99709702000001, "Tax_Revenue_pct_GDP": 1.2549904268633224e-08}, {"Country": "Uganda", "Year": 2023, "Gov_Debt_pct_GDP": 53.1469350760568, "CHE_pct_GDP": 4.2360014900000005, "GGHED_pct_GGE": 4.860398770000001, "GGHED_pct_GDP": 0.9233905699999999, "GGHED_million_USD": 479.55255989, "DOM_pct_CHE": 55.93008422999999, "Tax_Revenue_pct_GDP": 1.2968368479122104e-08}, {"Country": "United Republic of Tanzania", "Year": 2020, "Gov_Debt_pct_GDP": null, "CHE_pct_GDP": 3.0502867700000005, "GGHED_pct_GGE": 4.940001490000001, "GGHED_pct_GDP": 0.86159378, "GGHED_million_USD": 546.01784121, "DOM_pct_CHE": 58.35269165000001, "Tax_Revenue_pct_GDP": 1.1626768857329122e-08}, {"Country": "United Republic of Tanzania", "Year": 2021, "Gov_Debt_pct_GDP": null, "CHE_pct_GDP": 3.4696333399999992, "GGHED_pct_GGE": 5.135169979999999, "GGHED_pct_GDP": 0.94497848, "GGHED_million_USD": 642.24517243, "DOM_pct_CHE": 53.61752319, "Tax_Revenue_pct_GDP": 1.0855799645170082e-08}, {"Country": "United Republic of Tanzania", "Year": 2022, "Gov_Debt_pct_GDP": null, "CHE_pct_GDP": 3.13497496, "GGHED_pct_GGE": 5.135169979999999, "GGHED_pct_GDP": 0.9818578400000003, "GGHED_million_USD": 728.2733920100002, "DOM_pct_CHE": 60.31945038, "Tax_Revenue_pct_GDP": 1.1792680794227074e-08}, {"Country": "United Republic of Tanzania", "Year": 2023, "Gov_Debt_pct_GDP": null, "CHE_pct_GDP": 3.05201221, "GGHED_pct_GGE": 5.135169979999999, "GGHED_pct_GDP": 0.9666410099999998, "GGHED_million_USD": 764.98035822, "DOM_pct_CHE": 60.63765335000001, "Tax_Revenue_pct_GDP": 1.1491489020694263e-08}, {"Country": "Viet Nam", "Year": 2020, "Gov_Debt_pct_GDP": null, "CHE_pct_GDP": 4.332198139999999, "GGHED_pct_GGE": 8.42611885, "GGHED_pct_GDP": 1.7906467899999996, "GGHED_million_USD": 6206.66342981, "DOM_pct_CHE": 98.32099152, "Tax_Revenue_pct_GDP": null}, {"Country": "Viet Nam", "Year": 2021, "Gov_Debt_pct_GDP": null, "CHE_pct_GDP": 4.537924289999999, "GGHED_pct_GGE": 9.740694999999999, "GGHED_pct_GDP": 1.9602960299999999, "GGHED_million_USD": 7183.990149079999, "DOM_pct_CHE": 98.81147003, "Tax_Revenue_pct_GDP": null}, {"Country": "Viet Nam", "Year": 2022, "Gov_Debt_pct_GDP": null, "CHE_pct_GDP": 4.538095950000001, "GGHED_pct_GGE": 10.8293848, "GGHED_pct_GDP": 1.97061062, "GGHED_million_USD": 8147.395792649999, "DOM_pct_CHE": 98.40874481, "Tax_Revenue_pct_GDP": null}, {"Country": "Viet Nam", "Year": 2023, "Gov_Debt_pct_GDP": null, "CHE_pct_GDP": 4.56109476, "GGHED_pct_GGE": 10.451710699999998, "GGHED_pct_GDP": 2.02070236, "GGHED_million_USD": 8766.97238315, "DOM_pct_CHE": 98.85390471999999, "Tax_Revenue_pct_GDP": null}, {"Country": "Zambia", "Year": 2020, "Gov_Debt_pct_GDP": 103.543152350363, "CHE_pct_GDP": 6.306744099999999, "GGHED_pct_GGE": 10.560054779999998, "GGHED_pct_GDP": 3.5936515300000003, "GGHED_million_USD": 651.80836264, "DOM_pct_CHE": 66.99656677, "Tax_Revenue_pct_GDP": 1.6418005508760326e-05}, {"Country": "Zambia", "Year": 2021, "Gov_Debt_pct_GDP": 71.4111761749593, "CHE_pct_GDP": 6.639513970000001, "GGHED_pct_GGE": 9.254849429999998, "GGHED_pct_GDP": 2.8230683799999996, "GGHED_million_USD": 623.7971869099999, "DOM_pct_CHE": 50.53808211999999, "Tax_Revenue_pct_GDP": 1.678041067803444e-05}, {"Country": "Zambia", "Year": 2022, "Gov_Debt_pct_GDP": null, "CHE_pct_GDP": 5.21042967, "GGHED_pct_GGE": 8.88877583, "GGHED_pct_GDP": 2.50694346, "GGHED_million_USD": 731.11905733, "DOM_pct_CHE": 58.22601700000001, "Tax_Revenue_pct_GDP": null}, {"Country": "Zambia", "Year": 2023, "Gov_Debt_pct_GDP": null, "CHE_pct_GDP": 5.978410720000001, "GGHED_pct_GGE": 8.88877583, "GGHED_pct_GDP": 2.4341332900000006, "GGHED_million_USD": 671.28404683, "DOM_pct_CHE": 52.091850279999996, "Tax_Revenue_pct_GDP": null}, {"Country": "Zimbabwe", "Year": 2020, "Gov_Debt_pct_GDP": null, "CHE_pct_GDP": 2.95440102, "GGHED_pct_GGE": 4.7405839, "GGHED_pct_GDP": 0.6526890999999999, "GGHED_million_USD": 175.4298, "DOM_pct_CHE": 44.32542418999999, "Tax_Revenue_pct_GDP": null}, {"Country": "Zimbabwe", "Year": 2021, "Gov_Debt_pct_GDP": null, "CHE_pct_GDP": 2.6711187399999994, "GGHED_pct_GGE": 4.7405839, "GGHED_pct_GDP": 0.8798108099999998, "GGHED_million_USD": 316.87270204000004, "DOM_pct_CHE": 53.03826523, "Tax_Revenue_pct_GDP": null}, {"Country": "Zimbabwe", "Year": 2022, "Gov_Debt_pct_GDP": null, "CHE_pct_GDP": 3.3951950100000006, "GGHED_pct_GGE": 4.7405839, "GGHED_pct_GDP": 1.0182981500000001, "GGHED_million_USD": 332.09755537000007, "DOM_pct_CHE": 48.770217900000006, "Tax_Revenue_pct_GDP": null}, {"Country": "Zimbabwe", "Year": 2023, "Gov_Debt_pct_GDP": null, "CHE_pct_GDP": 2.92601609, "GGHED_pct_GGE": 4.7405839, "GGHED_pct_GDP": 0.9466284499999998, "GGHED_million_USD": 332.68310112, "DOM_pct_CHE": 55.015792850000004, "Tax_Revenue_pct_GDP": null}];
+        
+        let selectedCountries = new Set();
+        let selectedOverviewIndicators = new Set(); // tracks checked indicators on overview tab
+        let selectedCompareIndicators = new Set();
+        let allCountries = [];
+        let currentChartType = 'bar'; // 'bar' or 'line'
+        
+        const indicatorLabels = {
+            'GGHED_million_USD': {
+                name: 'Domestic General Government Health Expenditure (GGHE-D) in million current US$',
+                unit: 'million USD',
+                format: 'money'
+            },
+            'GGHED_pct_GDP': {
+                name: 'Domestic General Government Health Expenditure (GGHE-D) as % Gross Domestic Product (GDP)',
+                unit: '% of GDP',
+                format: 'percent'
+            },
+            'GGHED_pct_GGE': {
+                name: 'Domestic General Government Health Expenditure (GGHE-D) as % General Government Expenditure (GGE)',
+                unit: '% of GGE',
+                format: 'percent'
+            },
+            'CHE_pct_GDP': {
+                name: 'Current Health Expenditure (CHE) as % Gross Domestic Product (GDP)',
+                unit: '% of GDP',
+                format: 'percent'
+            },
+            'DOM_pct_CHE': {
+                name: 'Domestic Health Expenditure (DOM) as % of Current Health Expenditure (CHE)',
+                unit: '% of CHE',
+                format: 'percent'
+            },
+            'Gov_Debt_pct_GDP': {
+                name: 'Central government debt, total (% of GDP)',
+                unit: '% of GDP',
+                format: 'percent'
+            },
+            'Tax_Revenue_pct_GDP': {
+                name: 'Tax revenue (% of GDP)',
+                unit: '% of GDP',
+                format: 'percent'
+            }
+        };
+        
+        function formatMoney(valueInMillions) {
+            if (valueInMillions == null || isNaN(valueInMillions)) return 'N/A';
+            if (valueInMillions >= 1000) {
+                const billions = valueInMillions / 1000;
+                if (billions >= 100) return '$' + Math.round(billions).toLocaleString('en-US') + 'B';
+                else if (billions >= 10) return '$' + billions.toFixed(1) + 'B';
+                else return '$' + billions.toFixed(2) + 'B';
+            } else {
+                if (valueInMillions >= 100) return '$' + Math.round(valueInMillions).toLocaleString('en-US') + 'M';
+                else if (valueInMillions >= 10) return '$' + valueInMillions.toFixed(1) + 'M';
+                else return '$' + valueInMillions.toFixed(2) + 'M';
+            }
+        }
+        
+        function formatValue(value, format) {
+            if (value == null || isNaN(value)) return 'N/A';
+            if (format === 'money') return formatMoney(value);
+            return value.toFixed(2) + '%';
+        }
+        
+        function downloadDataAsExcel(data, filename) {
+            const wb = XLSX.utils.book_new();
+            const ws = XLSX.utils.json_to_sheet(data);
+            XLSX.utils.book_append_sheet(wb, ws, "Data");
+            XLSX.writeFile(wb, filename);
+        }
+        
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            
+            if (tabName === 'single') {
+                document.getElementById('singleTab').classList.add('active');
+                document.querySelectorAll('.tab')[0].classList.add('active');
+            } else if (tabName === 'compare') {
+                document.getElementById('compareTab').classList.add('active');
+                document.querySelectorAll('.tab')[1].classList.add('active');
+            }
+        }
+        
+        function initializeDashboard() {
+            allCountries = [...new Set(globalData.map(d => d.Country))].sort();
+            
+            // Populate country dropdowns
+            const singleCountrySelect = document.getElementById('singleCountrySelect');
+            allCountries.forEach(country => {
+                const option = document.createElement('option');
+                option.value = country;
+                option.textContent = country;
+                singleCountrySelect.appendChild(option);
+            });
+            
+            // Populate indicator checkboxes for Overview tab
+            renderOverviewIndicators();
+            
+            // Populate indicator checkboxes for Comparison tab
+            renderCompareIndicators();
+            
+            // Populate multi-select
+            renderMultiSelect(allCountries);
+            
+            // Search functionality
+            document.getElementById('searchBox').addEventListener('input', (e) => {
+                const searchTerm = e.target.value.toLowerCase();
+                const filtered = allCountries.filter(c => c.toLowerCase().includes(searchTerm));
+                renderMultiSelect(filtered);
+            });
+        }
+        
+        function renderMultiSelect(countries) {
+            const container = document.getElementById('countryMultiSelect');
+            container.innerHTML = '';
+            
+            countries.forEach(country => {
+                const div = document.createElement('div');
+                div.className = 'country-checkbox';
+                
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.id = 'cb_' + country.replace(/[^a-zA-Z0-9]/g, '_');
+                checkbox.value = country;
+                checkbox.checked = selectedCountries.has(country);
+                checkbox.addEventListener('change', (e) => {
+                    if (e.target.checked) {
+                        selectedCountries.add(country);
+                    } else {
+                        selectedCountries.delete(country);
+                    }
+                    updateSelectedCount();
+                });
+                
+                const label = document.createElement('label');
+                label.htmlFor = checkbox.id;
+                label.textContent = country;
+                
+                div.appendChild(checkbox);
+                div.appendChild(label);
+                container.appendChild(div);
+            });
+        }
+        
+        function updateSelectedCount() {
+            document.getElementById('selectedCount').textContent = selectedCountries.size + ' countries selected';
+        }
+        
+        function clearSelection() {
+            selectedCountries.clear();
+            document.querySelectorAll('#countryMultiSelect input[type="checkbox"]').forEach(cb => {
+                cb.checked = false;
+            });
+            updateSelectedCount();
+        }
+        
+        function selectAll() {
+            selectedCountries = new Set(allCountries);
+            document.querySelectorAll('#countryMultiSelect input[type="checkbox"]').forEach(cb => {
+                cb.checked = selectedCountries.has(cb.value);
+            });
+            updateSelectedCount();
+        }
+        
+        
+        function renderOverviewIndicators() {
+            const container = document.getElementById('overviewIndicatorCheckboxes');
+            const indicators = [
+                { value: 'GGHED_million_USD', label: 'Domestic General Government Health Expenditure (GGHE-D) in million current US$' },
+                { value: 'GGHED_pct_GDP', label: 'Domestic General Government Health Expenditure (GGHE-D) as % Gross Domestic Product (GDP)' },
+                { value: 'GGHED_pct_GGE', label: 'Domestic General Government Health Expenditure (GGHE-D) as % General Government Expenditure (GGE)' },
+                { value: 'CHE_pct_GDP', label: 'Current Health Expenditure (CHE) as % Gross Domestic Product (GDP)' },
+                { value: 'DOM_pct_CHE', label: 'Domestic Health Expenditure (DOM) as % of Current Health Expenditure (CHE)' },
+                { value: 'Gov_Debt_pct_GDP', label: 'Central government debt, total (% of GDP)' },
+                { value: 'Tax_Revenue_pct_GDP', label: 'Tax revenue (% of GDP)' }
+            ];
+            
+            container.innerHTML = '';
+            indicators.forEach(ind => {
+                const div = document.createElement('div');
+                div.className = 'country-checkbox';
+                
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.id = 'overview_ind_' + ind.value;
+                checkbox.value = ind.value;
+                checkbox.addEventListener('change', (e) => {
+                    if (e.target.checked) {
+                        selectedOverviewIndicators.add(ind.value);
+                    } else {
+                        selectedOverviewIndicators.delete(ind.value);
+                    }
+                    updateOverviewIndicatorCount();
+                });
+                
+                const label = document.createElement('label');
+                label.htmlFor = checkbox.id;
+                label.textContent = ind.label;
+                
+                div.appendChild(checkbox);
+                div.appendChild(label);
+                container.appendChild(div);
+            });
+        }
+        
+        function renderCompareIndicators() {
+            const container = document.getElementById('compareIndicatorCheckboxes');
+            const indicators = [
+                { value: 'GGHED_million_USD', label: 'Domestic General Government Health Expenditure (GGHE-D) in million current US$' },
+                { value: 'GGHED_pct_GDP', label: 'Domestic General Government Health Expenditure (GGHE-D) as % Gross Domestic Product (GDP)' },
+                { value: 'GGHED_pct_GGE', label: 'Domestic General Government Health Expenditure (GGHE-D) as % General Government Expenditure (GGE)' },
+                { value: 'CHE_pct_GDP', label: 'Current Health Expenditure (CHE) as % Gross Domestic Product (GDP)' },
+                { value: 'DOM_pct_CHE', label: 'Domestic Health Expenditure (DOM) as % of Current Health Expenditure (CHE)' },
+                { value: 'Gov_Debt_pct_GDP', label: 'Central government debt, total (% of GDP)' },
+                { value: 'Tax_Revenue_pct_GDP', label: 'Tax revenue (% of GDP)' }
+            ];
+            
+            container.innerHTML = '';
+            indicators.forEach(ind => {
+                const div = document.createElement('div');
+                div.className = 'country-checkbox';
+                
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.id = 'compare_ind_' + ind.value;
+                checkbox.value = ind.value;
+                checkbox.addEventListener('change', (e) => {
+                    if (e.target.checked) {
+                        selectedCompareIndicators.add(ind.value);
+                    } else {
+                        selectedCompareIndicators.delete(ind.value);
+                    }
+                    updateCompareIndicatorCount();
+                });
+                
+                const label = document.createElement('label');
+                label.htmlFor = checkbox.id;
+                label.textContent = ind.label;
+                
+                div.appendChild(checkbox);
+                div.appendChild(label);
+                container.appendChild(div);
+            });
+        }
+        
+        function updateOverviewIndicatorCount() {
+            document.getElementById('overviewIndicatorCount').textContent = 
+                selectedOverviewIndicators.size + ' indicators selected';
+        }
+        
+        function updateCompareIndicatorCount() {
+            document.getElementById('compareIndicatorCount').textContent = 
+                selectedCompareIndicators.size + ' indicators selected';
+        }
+        
+function updateSingleCountryView() {
+            const country = document.getElementById('singleCountrySelect').value;
+            
+            if (!country) {
+                alert('Please select a country');
+                return;
+            }
+            
+            if (selectedOverviewIndicators.size === 0) {
+                alert('Please select at least one indicator');
+                return;
+            }
+            
+            // Clear container
+            document.getElementById('singleChartContainer').innerHTML = '';
+            
+            // Create a chart for each selected indicator
+            const indicators = Array.from(selectedOverviewIndicators);
+            indicators.forEach((indicator, index) => {
+                const countryData = globalData
+                    .filter(d => d.Country === country && d[indicator] != null)
+                    .sort((a, b) => a.Year - b.Year);
+                
+                if (countryData.length === 0) {
+                    return; // Skip indicators with no data
+                }
+                
+                const indicatorInfo = indicatorLabels[indicator];
+                const chartId = 'singleChart_' + index;
+                
+                // Create chart container - bar chart only on overview
+                const chartHtml = `
+                    <div class="chart-container">
+                        <div class="chart-title">${country} - ${indicatorInfo.name}</div>
+                        <div class="chart-subtitle">2020-2023 | ${indicatorInfo.unit}</div>
+                        <div id="${chartId}"></div>
+                    </div>
+                `;
+                
+                document.getElementById('singleChartContainer').insertAdjacentHTML('beforeend', chartHtml);
+                plotSingleCountry(countryData, indicator, 'bar', chartId);
+            });
+            
+            if (indicators.length === 0 || document.getElementById('singleChartContainer').children.length === 0) {
+                document.getElementById('singleChartContainer').innerHTML = `
+                    <div class="placeholder">
+                        <div class="icon">⚠️</div>
+                        <p><strong>No data available</strong></p>
+                        <p style="font-size: 14px;">The selected indicators have no data for ${country}</p>
+                    </div>
+                `;
+            }
+        }
+        
+        function plotSingleCountry(data, indicator, chartType, chartId = 'singleChart') {
+            const indicatorInfo = indicatorLabels[indicator];
+            
+            // For Tax Revenue - plot chart normally, then append notice + download button after
+            if (indicator === 'Tax_Revenue_pct_GDP') {
+                // Let it fall through to normal chart plotting below,
+                // then after Plotly.newPlot we add the notice + button
+            }
+            
+            // Calculate average
+            const values = data.map(d => d[indicator]).filter(v => v != null && !isNaN(v));
+            const average = values.length > 0 ? values.reduce((a, b) => a + b, 0) / values.length : 0;
+            
+            // Format average value
+            let avgDisplay;
+            if (indicatorInfo.format === 'money') {
+                avgDisplay = formatMoney(average);
+            } else if (indicatorInfo.format === 'tax') {
+                avgDisplay = average.toExponential(5);
+            } else {
+                avgDisplay = average.toFixed(2) + '%';
+            }
+            
+            // Add stats box (only if not already there)
+            const chartContainer = document.getElementById(chartId).closest('.chart-container');
+            if (chartContainer) {
+                const chartTitle = chartContainer.querySelector('.chart-title');
+                if (chartTitle && !chartContainer.querySelector('.stats-box')) {
+                    const statsHtml = `
+                        <div class="stats-box">
+                            <div class="stat-label">${indicatorInfo.name} - Average (2020-2023)</div>
+                            <div class="stat-value">${avgDisplay}</div>
+                        </div>
+                    `;
+                    chartTitle.insertAdjacentHTML('afterend', statsHtml);
+                }
+            }
+            
+            // Build text labels
+            const textLabels = data.map(d => {
+                const val = d[indicator];
+                if (val == null || isNaN(val)) return 'N/A';
+                if (indicatorInfo.format === 'money') return formatMoney(val);
+                if (indicatorInfo.format === 'tax') return val.toExponential(5);
+                return val.toFixed(2) + '%';
+            });
+
+            const isLine = chartType === 'line';
+
+            const trace = {
+                x: data.map(d => d.Year.toString()),
+                y: data.map(d => d[indicator]),
+                type: isLine ? 'scatter' : 'bar',
+                mode: isLine ? 'lines+markers+text' : undefined,
+                marker: isLine
+                    ? { size: 12, color: '#667eea', line: { width: 2, color: '#fff' } }
+                    : { color: '#667eea', line: { width: 2, color: '#fff' } },
+                line: isLine ? { width: 4, color: '#667eea' } : undefined,
+                text: textLabels,
+                texttemplate: '%{text}',
+                textposition: isLine ? 'top center' : 'outside',
+                textfont: { size: 13, color: '#2d3748' },
+                hovertemplate: indicatorInfo.format === 'money'
+                    ? '<b>%{x}</b><br>$%{y:,.1f}M<extra></extra>'
+                    : indicatorInfo.format === 'tax'
+                        ? '<b>%{x}</b><br>%{text}<extra></extra>'
+                        : '<b>%{x}</b><br>%{y:.2f}%<extra></extra>'
+            };
+
+            // Purge and redraw to ensure chart type switches correctly
+            Plotly.purge(chartId);
+            Plotly.newPlot(chartId, [trace], {
+                xaxis: { 
+                    title: 'Year', 
+                    gridcolor: '#e2e8f0',
+                    tickvals: data.map(d => d.Year.toString())
+                },
+                yaxis: { 
+                    title: indicatorInfo.unit, 
+                    gridcolor: '#e2e8f0',
+                    tickformat: indicatorInfo.format === 'tax' ? '.2e' : undefined
+                },
+                plot_bgcolor: '#ffffff',
+                paper_bgcolor: '#ffffff',
+                showlegend: false,
+                margin: { l: 80, r: 100, t: 20, b: 60 },
+                height: 450
+            }, { responsive: true });
+            
+            // After chart renders, add notice + download button for Tax Revenue
+            if (indicator === 'Tax_Revenue_pct_GDP') {
+                const chartContainer = document.getElementById(chartId).closest('.chart-container');
+                if (chartContainer && !chartContainer.querySelector('.tax-notice')) {
+                    const country = data[0] ? data[0].Country : '';
+                    chartContainer.insertAdjacentHTML('beforeend', `
+                        <div class="tax-notice" style="margin-top:16px; background:#fff3cd; border:1px solid #ffc107; border-radius:8px; padding:14px 18px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
+                            <div style="display:flex; align-items:center; gap:10px;">
+                                <span style="font-size:20px;">⚠️</span>
+                                <span style="color:#856404; font-size:14px; font-weight:500;">Values are in scientific notation — download to view full precision data.</span>
+                            </div>
+                            <button onclick="downloadTaxRevenueData('${country}')" 
+                                style="padding:10px 20px; background:#38a169; color:white; border:none; border-radius:6px; font-size:13px; font-weight:600; cursor:pointer; white-space:nowrap;">
+                                📥 Download Tax Revenue Data (Excel)
+                            </button>
+                        </div>
+                    `);
+                }
+            }
+        }
+        
+        
+        function toggleChartTypeCompare(type, index) {
+            currentChartType = type;
+            
+            // Update toggle buttons
+            const chartId = 'compareChart_' + index;
+            const chartContainer = document.getElementById(chartId).closest('.chart-container');
+            if (chartContainer) {
+                chartContainer.querySelectorAll('.toggle-btn').forEach(btn => btn.classList.remove('active'));
+                event.target.classList.add('active');
+                
+                // Get the indicator for this chart
+                const indicators = Array.from(selectedCompareIndicators);
+                const indicator = indicators[index];
+                
+                // Get the data and replot
+                const comparisonData = globalData.filter(d => 
+                    selectedCountries.has(d.Country) && d[indicator] != null
+                );
+                
+                plotComparison(comparisonData, indicator, type, chartId);
+            }
+        }
+        
+function toggleChartType(type, view, index) {
+            currentChartType = type;
+            
+            // Update the clicked button's toggle state
+            event.target.closest('.chart-type-toggle').querySelectorAll('.toggle-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            // Redraw the specific chart
+            if (view === 'single') {
+                const indicator = Array.from(selectedOverviewIndicators)[index];
+                const chartId = 'singleChart_' + index;
+                const countryData = globalData
+                    .filter(d => d.Country === selectedSingleCountry && d[indicator] != null)
+                    .sort((a, b) => a.Year - b.Year);
+                plotSingleCountry(countryData, indicator, type, chartId);
+            } else {
+                updateComparisonView(type);
+            }
+        }
+        
+        function updateComparisonView(chartType = currentChartType) {
+            if (selectedCompareIndicators.size === 0) {
+                alert('Please select at least one indicator');
+                return;
+            }
+            
+            if (selectedCountries.size === 0) {
+                alert('Please select at least one country');
+                return;
+            }
+            
+            // Clear container
+            document.getElementById('compareChartContainer').innerHTML = '';
+            
+            // Create a chart for each selected indicator
+            const indicators = Array.from(selectedCompareIndicators);
+            indicators.forEach((indicator, index) => {
+                const indicatorInfo = indicatorLabels[indicator];
+                
+                // Get data for selected countries
+                const comparisonData = globalData.filter(d => 
+                    selectedCountries.has(d.Country) && d[indicator] != null
+                );
+                
+                if (comparisonData.length === 0) {
+                    return; // Skip indicators with no data
+                }
+                
+                const chartId = 'compareChart_' + index;
+                
+                // Create chart container
+                const chartHtml = `
+                    <div class="chart-container">
+                        <div class="chart-title">Country Comparison - ${indicatorInfo.name}</div>
+                        <div class="chart-subtitle">2020-2023 | ${indicatorInfo.unit}</div>
+                        <div class="chart-type-toggle">
+                            <button class="toggle-btn active" onclick="toggleChartTypeCompare('bar', ${index})">📊 Bar Chart</button>
+                            <button class="toggle-btn" onclick="toggleChartTypeCompare('line', ${index})">📈 Line Chart</button>
+                        </div>
+                        <div id="${chartId}"></div>
+                    </div>
+                `;
+                
+                document.getElementById('compareChartContainer').insertAdjacentHTML('beforeend', chartHtml);
+                
+                // Plot chart for all indicators including Tax Revenue
+                plotComparison(comparisonData, indicator, chartType, chartId);
+                
+                // After chart, add notice + download button for Tax Revenue
+                if (indicator === 'Tax_Revenue_pct_GDP') {
+                    const chartContainer = document.getElementById(chartId).closest('.chart-container');
+                    if (chartContainer && !chartContainer.querySelector('.tax-notice')) {
+                        chartContainer.insertAdjacentHTML('beforeend', `
+                            <div class="tax-notice" style="margin-top:16px; background:#fff3cd; border:1px solid #ffc107; border-radius:8px; padding:14px 18px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
+                                <div style="display:flex; align-items:center; gap:10px;">
+                                    <span style="font-size:20px;">⚠️</span>
+                                    <span style="color:#856404; font-size:14px; font-weight:500;">Values are in scientific notation — download to view full precision data.</span>
+                                </div>
+                                <button onclick="downloadComparisonData()" 
+                                    style="padding:10px 20px; background:#38a169; color:white; border:none; border-radius:6px; font-size:13px; font-weight:600; cursor:pointer; white-space:nowrap;">
+                                    📥 Download Tax Revenue Data (Excel)
+                                </button>
+                            </div>
+                        `);
+                    }
+                }
+            });
+            
+            if (indicators.length === 0 || document.getElementById('compareChartContainer').children.length === 0) {
+                document.getElementById('compareChartContainer').innerHTML = `
+                    <div class="placeholder">
+                        <div class="icon">⚠️</div>
+                        <p><strong>No data available</strong></p>
+                        <p style="font-size: 14px;">The selected indicators have no data for the selected countries</p>
+                    </div>
+                `;
+            }
+        }
+        
+        function plotComparison(data, indicator, chartType, chartId = 'compareChart') {
+            const indicatorInfo = indicatorLabels[indicator];
+            
+            // Helper to format a single value for labels
+            function fmtVal(val) {
+                if (val == null || isNaN(val)) return 'N/A';
+                if (indicatorInfo.format === 'money') return formatMoney(val);
+                if (indicatorInfo.format === 'tax') return val.toExponential(5);
+                return val.toFixed(2) + '%';
+            }
+            
+            if (chartType === 'bar') {
+                const years = [...new Set(data.map(d => d.Year))].sort();
+                const countries = [...selectedCountries].sort();
+                
+                const traces = countries.map(country => {
+                    const countryData = years.map(year => {
+                        const d = data.find(item => item.Country === country && item.Year === year);
+                        return d ? d[indicator] : null;
+                    });
+                    
+                    return {
+                        x: years.map(y => y.toString()),
+                        y: countryData,
+                        type: 'bar',
+                        name: country,
+                        text: countryData.map(val => fmtVal(val)),
+                        texttemplate: '%{text}',
+                        textposition: 'outside',
+                        textfont: { size: 10 },
+                        hovertemplate: '<b>%{fullData.name}</b><br>%{x}: %{text}<extra></extra>'
+                    };
+                });
+                
+                Plotly.newPlot(chartId, traces, {
+                    barmode: 'group',
+                    xaxis: { title: 'Year', gridcolor: '#e2e8f0' },
+                    yaxis: {
+                        title: indicatorInfo.unit,
+                        gridcolor: '#e2e8f0',
+                        tickformat: indicatorInfo.format === 'tax' ? '.2e' : undefined
+                    },
+                    plot_bgcolor: '#ffffff',
+                    paper_bgcolor: '#ffffff',
+                    showlegend: true,
+                    legend: { orientation: 'h', y: -0.2 },
+                    height: 500
+                }, { responsive: true });
+                
+            } else {
+                const countries = [...selectedCountries].sort();
+                
+                const traces = countries.map(country => {
+                    const countryData = data
+                        .filter(d => d.Country === country)
+                        .sort((a, b) => a.Year - b.Year);
+                    
+                    return {
+                        x: countryData.map(d => d.Year),
+                        y: countryData.map(d => d[indicator]),
+                        type: 'scatter',
+                        mode: 'lines+markers+text',
+                        name: country,
+                        text: countryData.map(d => fmtVal(d[indicator])),
+                        texttemplate: '%{text}',
+                        textposition: 'top center',
+                        textfont: { size: 10 },
+                        line: { width: 3 },
+                        marker: { size: 8 },
+                        hovertemplate: '<b>%{fullData.name}</b><br>%{x}: %{text}<extra></extra>'
+                    };
+                });
+                
+                Plotly.newPlot(chartId, traces, {
+                    xaxis: { title: 'Year', gridcolor: '#e2e8f0' },
+                    yaxis: {
+                        title: indicatorInfo.unit,
+                        gridcolor: '#e2e8f0',
+                        tickformat: indicatorInfo.format === 'tax' ? '.2e' : undefined
+                    },
+                    plot_bgcolor: '#ffffff',
+                    paper_bgcolor: '#ffffff',
+                    showlegend: true,
+                    legend: { orientation: 'v', x: 1.02, y: 1 },
+                    height: 500
+                }, { responsive: true });
+            }
+        }
+        
+        function downloadSingleCountryData() {
+            const countrySelect = document.getElementById('singleCountrySelect');
+            const country = countrySelect ? countrySelect.value : '';
+            
+            if (!country) {
+                alert('Please select a country first');
+                return;
+            }
+            if (selectedOverviewIndicators.size === 0) {
+                alert('Please select at least one indicator first');
+                return;
+            }
+            
+            // Get all data for the country
+            const allCountryData = globalData.filter(d => d.Country === country);
+            
+            // Build export rows with only selected indicators
+            const selectedInds = Array.from(selectedOverviewIndicators);
+            const exportData = allCountryData.map(d => {
+                const row = { Country: d.Country, Year: d.Year };
+                selectedInds.forEach(ind => {
+                    row[indicatorLabels[ind].name] = d[ind];
+                });
+                return row;
+            });
+            
+            downloadDataAsExcel(exportData, country + '_Health_Data.xlsx');
+        }
+        
+        function downloadComparisonData() {
+            if (selectedCompareIndicators.size === 0) {
+                alert('Please select at least one indicator first');
+                return;
+            }
+            if (selectedCountries.size === 0) {
+                alert('Please select countries first');
+                return;
+            }
+            
+            // Build export rows with only selected indicators and countries
+            const allData = globalData.filter(d => selectedCountries.has(d.Country));
+            const selectedInds = Array.from(selectedCompareIndicators);
+            const exportData = allData.map(d => {
+                const row = { Country: d.Country, Year: d.Year };
+                selectedInds.forEach(ind => {
+                    row[indicatorLabels[ind].name] = d[ind];
+                });
+                return row;
+            });
+            
+            downloadDataAsExcel(exportData, 'Country_Comparison_Health_Data.xlsx');
+        }
+        function downloadTaxRevenueData(country) {
+            if (!country) {
+                const sel = document.getElementById('singleCountrySelect');
+                country = sel ? sel.value : '';
+            }
+            if (!country) {
+                alert('Please select a country first');
+                return;
+            }
+            const data = globalData.filter(d => d.Country === country).map(d => ({
+                Country: d.Country,
+                Year: d.Year,
+                'Tax revenue (% of GDP)': d.Tax_Revenue_pct_GDP
+            }));
+            downloadDataAsExcel(data, country + '_Tax_Revenue_Data.xlsx');
+        }
+    </script>
+</body>
+</html>
