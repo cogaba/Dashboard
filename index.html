@@ -339,17 +339,17 @@
         <div id="compareTab" class="tab-content">
             <div class="controls">
                 <div class="control-row">
-                    <div class="control-group">
-                        <label>📊 Select Indicators (check one or more)</label>
-                        <div class="multi-select-box" id="compareIndicatorCheckboxes"></div>
-                        <div class="selected-count" id="compareIndicatorCount">0 indicators selected</div>
-                    </div>
-                    
                     <div class="control-group" style="flex: 1.5;">
                         <label>🌍 Select Countries to Compare</label>
                         <input type="text" id="searchBox" class="search-box" placeholder="Search countries...">
                         <div class="multi-select-box" id="countryMultiSelect"></div>
                         <div class="selected-count" id="selectedCount">0 countries selected</div>
+                    </div>
+                    
+                    <div class="control-group">
+                        <label>📊 Select Indicators (check one or more)</label>
+                        <div class="multi-select-box" id="compareIndicatorCheckboxes"></div>
+                        <div class="selected-count" id="compareIndicatorCount">0 indicators selected</div>
                     </div>
                 </div>
                 
@@ -1391,7 +1391,9 @@
                 marker: { color: '#667eea' },
                 text: sorted.map(d => formatMOUMoney(d['U.S. Funding'])),
                 textposition: 'inside',
-                textfont: { color: 'white', size: 11 }
+                textfont: { color: 'white', size: 11 },
+                hovertemplate: '<b>%{x}</b><br>U.S. Funding: %{text}<extra></extra>',
+                customdata: sorted.map(d => formatMOUMoney(d['U.S. Funding']))
             };
             
             const trace2 = {
@@ -1402,16 +1404,42 @@
                 marker: { color: '#48bb78' },
                 text: sorted.map(d => formatMOUMoney(d['Country Co-Investment'])),
                 textposition: 'inside',
-                textfont: { color: 'white', size: 11 }
+                textfont: { color: 'white', size: 11 },
+                hovertemplate: '<b>%{x}</b><br>Country Co-Investment: %{text}<extra></extra>',
+                customdata: sorted.map(d => formatMOUMoney(d['Country Co-Investment']))
             };
             
             container.innerHTML = '<div class="chart-container"><div id="mouChart"></div></div>';
+            
+            // Calculate max value for tick formatting
+            const maxVal = Math.max(...sorted.map(d => d['Total Funding']));
+            const yTickVals = [];
+            const yTickText = [];
+            
+            if (maxVal >= 1e9) {
+                // Use billions
+                for (let i = 0; i <= Math.ceil(maxVal / 1e9); i++) {
+                    yTickVals.push(i * 1e9);
+                    yTickText.push('$' + i + 'B');
+                }
+            } else {
+                // Use millions
+                const step = Math.ceil(maxVal / 1e6 / 5) * 1e6;
+                for (let i = 0; i <= Math.ceil(maxVal / step); i++) {
+                    yTickVals.push(i * step);
+                    yTickText.push('$' + (i * step / 1e6) + 'M');
+                }
+            }
             
             Plotly.newPlot('mouChart', [trace1, trace2], {
                 barmode: 'stack',
                 title: 'U.S. Global Health MOU Funding by Country (Alphabetical)',
                 xaxis: { tickangle: -45 },
-                yaxis: { title: 'Funding (USD)', tickformat: '$.2s' },
+                yaxis: { 
+                    title: 'Funding (USD)',
+                    tickvals: yTickVals,
+                    ticktext: yTickText
+                },
                 height: 600,
                 showlegend: true,
                 legend: { orientation: 'h', y: -0.25 },
