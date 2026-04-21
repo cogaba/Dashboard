@@ -1067,12 +1067,61 @@
                 
             } else {
                 const countries = [...selectedCountries].sort();
-                
-                const traces = countries.map(country => {
+
+                // Smart label positioning: stagger positions to avoid overlap
+                // Alternate between top/bottom for adjacent countries at same year,
+                // and shift text vertically based on rank among overlapping values.
+                const positionCycle = [
+                    'top center', 'bottom center',
+                    'top right',  'bottom right',
+                    'top left',   'bottom left'
+                ];
+
+                // Build per-year value maps so we can detect proximity
+                const years = [...new Set(data.map(d => d.Year))].sort();
+                const PROXIMITY_THRESHOLD = 0.08; // 8% of y-range considered "close"
+
+                const allYValues = data.map(d => d[indicator]).filter(v => v != null && !isNaN(v));
+                const yMin = Math.min(...allYValues);
+                const yMax = Math.max(...allYValues);
+                const yRange = yMax - yMin || 1;
+
+                // For each (year, country) assign a position index based on sorted rank
+                const positionMap = {}; // key: `${country}__${year}` => positionIndex
+                years.forEach(year => {
+                    const yearEntries = countries.map(country => {
+                        const d = data.find(item => item.Country === country && item.Year === year);
+                        return { country, val: d ? d[indicator] : null };
+                    }).filter(e => e.val != null);
+
+                    // Sort by value descending
+                    yearEntries.sort((a, b) => b.val - a.val);
+
+                    // Group entries that are close to each other
+                    let group = 0;
+                    let posIdx = 0;
+                    yearEntries.forEach((entry, i) => {
+                        if (i > 0 && Math.abs(entry.val - yearEntries[i - 1].val) / yRange > PROXIMITY_THRESHOLD) {
+                            group++;
+                            posIdx = 0;
+                        }
+                        positionMap[`${entry.country}__${year}`] = posIdx % positionCycle.length;
+                        posIdx++;
+                    });
+                });
+
+                const traces = countries.map((country, countryIdx) => {
                     const countryData = data
                         .filter(d => d.Country === country)
                         .sort((a, b) => a.Year - b.Year);
-                    
+
+                    // Assign per-point label positions
+                    const textPositions = countryData.map(d => {
+                        const key = `${country}__${d.Year}`;
+                        const idx = positionMap[key] !== undefined ? positionMap[key] : (countryIdx % positionCycle.length);
+                        return positionCycle[idx];
+                    });
+
                     return {
                         x: countryData.map(d => d.Year),
                         y: countryData.map(d => d[indicator]),
@@ -1081,28 +1130,44 @@
                         name: country,
                         text: countryData.map(d => formatValue(d[indicator], indicatorInfo.format)),
                         texttemplate: '%{text}',
-                        textposition: 'top center',
-                        textfont: { size: 10 },
-                        line: { width: 3 },
-                        marker: { size: 8 },
+                        textposition: textPositions,
+                        textfont: { size: 11, color: '#2d3748' },
+                        line: { width: 2.5 },
+                        marker: { size: 9, line: { width: 1.5, color: '#fff' } },
                         hovertemplate: '<b>%{fullData.name}</b><br>%{x}: %{text}<extra></extra>'
                     };
                 });
-                
+
+                // Increase chart height dynamically for many countries
+                const dynamicHeight = Math.max(520, 400 + countries.length * 15);
+
                 Plotly.newPlot(chartId, traces, {
-                    xaxis: { title: 'Year', gridcolor: '#e2e8f0',
-                dtick: 1,
-                tickformat: 'd'
-            },
+                    xaxis: {
+                        title: 'Year',
+                        gridcolor: '#e2e8f0',
+                        dtick: 1,
+                        tickformat: 'd'
+                    },
                     yaxis: {
                         title: indicatorInfo.unit,
-                        gridcolor: '#e2e8f0'
+                        gridcolor: '#e2e8f0',
+                        // Add padding so top/bottom labels aren't clipped
+                        range: [yMin - yRange * 0.12, yMax + yRange * 0.18]
                     },
                     plot_bgcolor: '#ffffff',
                     paper_bgcolor: '#ffffff',
                     showlegend: true,
-                    legend: { orientation: 'v', x: 1.02, y: 1 },
-                    height: 500
+                    legend: {
+                        orientation: 'v',
+                        x: 1.02,
+                        y: 1,
+                        bgcolor: 'rgba(255,255,255,0.9)',
+                        bordercolor: '#e2e8f0',
+                        borderwidth: 1,
+                        font: { size: 12 }
+                    },
+                    margin: { l: 70, r: 180, t: 20, b: 60 },
+                    height: dynamicHeight
                 }, { responsive: true });
             }
         }
