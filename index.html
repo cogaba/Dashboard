@@ -348,6 +348,19 @@
             word-break: break-all;
             line-height: 1.3;
         }
+
+        /* Acknowledgement footer */
+        .ack-footer {
+            max-width: 1400px;
+            margin: 24px auto 8px;
+            padding: 18px 28px;
+            text-align: center;
+            font-size: 13px;
+            line-height: 1.6;
+            color: #ffffff;
+            border-top: 1px solid rgba(255,255,255,0.35);
+        }
+        .ack-footer strong { color: #ffffff; font-weight: 700; }
     </style>
 </head>
 <body>
@@ -486,6 +499,10 @@
             </div>
         </div>
     </div>
+
+    <footer class="ack-footer">
+        This application is designed by the <strong>Center for Innovation in Social Work and Health at Boston University</strong> under grant INV-046280 from <strong>The Gates Foundation</strong>.
+    </footer>
 
     <script>
         window.addEventListener('load', function() {
