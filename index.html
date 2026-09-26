@@ -1278,24 +1278,74 @@
                 const years = [...new Set(data.map(d => d.Year))].sort();
                 const countries = getSortedCompareCountries(data, indicator, chartId);
                 
-                const traces = countries.map(country => {
-                    const countryData = years.map(year => {
-                        const d = data.find(item => item.Country === country && item.Year === year);
-                        return d ? d[indicator] : null;
+                const sortSel = document.getElementById('sort_' + chartId);
+                const sortOrder = sortSel ? sortSel.value : 'alpha';
+                const valueOf = (country, year) => {
+                    const d = data.find(item => item.Country === country && item.Year === year);
+                    return d ? d[indicator] : null;
+                };
+                
+                let traces;
+                if (sortOrder === 'alpha') {
+                    // One trace per country; same order in every year group
+                    traces = countries.map(country => {
+                        const countryData = years.map(year => valueOf(country, year));
+                        return {
+                            x: years.map(y => y.toString()),
+                            y: countryData,
+                            type: 'bar',
+                            name: country,
+                            text: countryData.map(val => formatValue(val, indicatorInfo.format)),
+                            texttemplate: '%{text}',
+                            textposition: 'outside',
+                            textfont: { size: 10 },
+                            hovertemplate: '<b>%{fullData.name}</b><br>%{x}: %{text}<extra></extra>'
+                        };
+                    });
+                } else {
+                    // Rank countries independently within each year, so every year group reads
+                    // highest→lowest (or lowest→highest) left to right. Each country keeps one colour.
+                    const palette = ['#1f77b4','#ff7f0e','#2ca02c','#d62728','#9467bd','#8c564b','#e377c2','#7f7f7f','#bcbd22','#17becf'];
+                    const colorOf = {};
+                    countries.forEach((c, i) => { colorOf[c] = palette[i % palette.length]; });
+                    
+                    const rankedByYear = years.map(year => {
+                        const entries = countries
+                            .map(c => ({ country: c, val: valueOf(c, year) }))
+                            .filter(e => e.val != null && !isNaN(e.val));
+                        entries.sort((a, b) => sortOrder === 'desc' ? b.val - a.val : a.val - b.val);
+                        return entries;
                     });
                     
-                    return {
-                        x: years.map(y => y.toString()),
-                        y: countryData,
-                        type: 'bar',
-                        name: country,
-                        text: countryData.map(val => formatValue(val, indicatorInfo.format)),
-                        texttemplate: '%{text}',
-                        textposition: 'outside',
-                        textfont: { size: 10 },
-                        hovertemplate: '<b>%{fullData.name}</b><br>%{x}: %{text}<extra></extra>'
-                    };
-                });
+                    traces = countries.map((_, rank) => {
+                        const slot = rankedByYear.map(entries => entries[rank] || null);
+                        return {
+                            x: years.map(y => y.toString()),
+                            y: slot.map(e => e ? e.val : null),
+                            type: 'bar',
+                            showlegend: false,
+                            marker: { color: slot.map(e => e ? colorOf[e.country] : 'rgba(0,0,0,0)') },
+                            customdata: slot.map(e => e ? e.country : ''),
+                            text: slot.map(e => e ? formatValue(e.val, indicatorInfo.format) : ''),
+                            texttemplate: '%{text}',
+                            textposition: 'outside',
+                            textfont: { size: 10 },
+                            hovertemplate: '<b>%{customdata}</b><br>%{x}: %{text}<extra></extra>'
+                        };
+                    });
+                    
+                    // Legend entries (one per country); null points so they don't affect the bar groups
+                    countries.forEach(country => {
+                        traces.push({
+                            x: [null], y: [null],
+                            type: 'scatter', mode: 'markers',
+                            name: country,
+                            marker: { color: colorOf[country], size: 12, symbol: 'square' },
+                            hoverinfo: 'skip',
+                            showlegend: true
+                        });
+                    });
+                }
                 
                 Plotly.newPlot(chartId, traces, {
                     barmode: 'group',
